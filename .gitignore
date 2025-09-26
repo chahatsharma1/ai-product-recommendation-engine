@@ -1,0 +1,14 @@
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+HELP.md
+
+
+.idea
+
+application-dev.properties
+.env
+
+.mvn
+mvnw
+mvnw.cmd
