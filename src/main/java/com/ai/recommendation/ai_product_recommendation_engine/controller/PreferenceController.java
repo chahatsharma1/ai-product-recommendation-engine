@@ -1,7 +1,10 @@
 package com.ai.recommendation.ai_product_recommendation_engine.controller;
 
+import com.ai.recommendation.ai_product_recommendation_engine.dto.MessageResponse;
+import com.ai.recommendation.ai_product_recommendation_engine.dto.PreferenceRequest;
 import com.ai.recommendation.ai_product_recommendation_engine.entity.User;
 import com.ai.recommendation.ai_product_recommendation_engine.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,17 +16,27 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PreferenceController {
     private final UserRepository userRepo;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("/{userId}")
-    public ResponseEntity<User> updatePreferences(@PathVariable Long userId, @RequestBody String preferences) {
-        Optional<User> user = userRepo.findById(userId);
+    public ResponseEntity<MessageResponse> updatePreferences(@PathVariable Long userId, @RequestBody PreferenceRequest request) {
+        Optional<User> optionalUser = userRepo.findById(userId);
 
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("User Does Not Exist"));
+        }
 
-        return userRepo.findById(userId)
-                .map(user -> {
-                    user.setPreferences(preferences);
-                    return ResponseEntity.ok(userRepo.save(user));
-                }
-                ).orElse(ResponseEntity.notFound().build());
+        User user = optionalUser.get();
+
+        try {
+            String jsonPrefs = objectMapper.writeValueAsString(request);
+            user.setPreferences(jsonPrefs);
+            userRepo.save(user);
+
+            return ResponseEntity.ok().body(new MessageResponse("Preferences Updated"));
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body(new MessageResponse("Invalid preferences format"));
+        }
+
     }
 }
